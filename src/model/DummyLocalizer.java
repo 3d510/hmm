@@ -10,8 +10,8 @@ public class DummyLocalizer implements EstimatorInterface {
 		
 	private int rows, cols, head, posX, posY;
 	Random rand = new Random();
-	int[] xDir = {0,-1,0,1}; // LEFT,UP,RIGHT,DOWN
-	int[] yDir = {-1,0,1,0};
+	int[] xDir = {-1,0,1,0}; // UP,RIGHT,DOWN,LEFT
+	int[] yDir = {0,1,0,-1};
 
 	public DummyLocalizer( int rows, int cols, int head) {
 		this.rows = rows;
@@ -148,6 +148,18 @@ public class DummyLocalizer implements EstimatorInterface {
 		
 		return ret;
 	}
+	
+	public double[][] getTMatrix() {
+		double[][] tMatrix = new double[rows*cols*4][rows*cols*4];
+		for (int index=0; i<rows*cols*4; i++) {
+			int row = ;
+			int col = ;
+			int dir = i%(4);
+		}
+		return tMatrix;
+	}
+	
+	
 	
 	public boolean isFacingWall() {
 		int newX = posX + xDir[head];
