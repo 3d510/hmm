@@ -159,6 +159,16 @@ public class DummyLocalizer implements EstimatorInterface {
 		return tMatrix;
 	}
 	
+	public double[][] getEMatrix(int coord){
+		/*if sensed_coord is None:
+            return self.none_matrix
+        width = self.width
+        height = self.height*/
+		double[][] matrix = new double[rows*cols*4][rows*cols*4];
+		
+		return matrix;
+	}
+	
 	
 	
 	public boolean isFacingWall() {
