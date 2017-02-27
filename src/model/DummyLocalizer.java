@@ -56,7 +56,21 @@ public class DummyLocalizer implements EstimatorInterface {
 	}
 
 	public double getOrXY( int rX, int rY, int x, int y) {
-		return 0.1;
+		List<ArrayList<Integer>> firstField = possibleLoc1(x,y);
+		for (ArrayList<Integer> pos: firstField) {
+			if (rX == pos.get(0) && rY == pos.get(1))
+				return 0.05;
+		}
+		List<ArrayList<Integer>> secondField = possibleLoc2(x,y);
+		for (ArrayList<Integer> pos: secondField) {
+			if (rX == pos.get(0) && rY == pos.get(1))
+				return 0.025;
+		}
+		if (x==rX && y==rY)
+			return 0.1;
+		else if(rX==-1 ||rY==-1)
+			return 1 - 0.1 - 0.05*firstField.size() - 0.025*secondField.size();
+		return 0.0;
 	}
 
 
@@ -186,20 +200,21 @@ public class DummyLocalizer implements EstimatorInterface {
 		return tMatrix;
 	}
 	
-	public double[][] getEMatrix(int[] coord){
+	public double[][] getOMatrix(int[] coord){
 		if(coord == null)
             return getNullMatrix();
 		
-		int posX= coord[0];
-		int posY= coord[1];
+		int x= coord[0];
+		int y= coord[1];
 		double[][] matrix = new double[rows*cols*4][rows*cols*4];
 		
-		int index = posX * cols * 4 + posY * 4;
+		int index = x * cols * 4 + y * 4;
 		
         for(int i = 0; i < 0 ; i++){
         	matrix[index + i][index + i] = 0.1;
         }
-        setProbNeighbor(matrix, possibleLoc1(posX, posY), 0.05);
+        setProbNeighbor(matrix, possibleLoc1(x, y), 0.05);
+        setProbNeighbor(matrix, possibleLoc2(x, y), 0.025);
 		return matrix;
 	}
 	
@@ -213,7 +228,7 @@ public class DummyLocalizer implements EstimatorInterface {
             int prob1 = 8 - possibleLoc1(posX, posY).size();
             int prob2 = 16 - possibleLoc2(posX, posY).size();
             
-            matrix[i][i] = 1 - ( 0.1 -  prob1 * 0.05 - prob2 * 0.025);
+            matrix[i][i] = 0.1 +  prob1 * 0.05 + prob2 * 0.025;
 		}
 		
 		return matrix;
