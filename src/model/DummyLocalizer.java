@@ -34,7 +34,18 @@ public class DummyLocalizer implements EstimatorInterface {
 	}
 	
 	public double getTProb( int x, int y, int h, int nX, int nY, int nH) {
-		return 0.0;
+		if (!isAdjacent(x,y,nX,nY) || isOutside(nX,nY) || isOutside(x,y))
+			return 0.0;
+		// same direction
+		if (h == nH)
+			return 0.7;
+		// facing wall
+		if (isOutside(x+xDir[h],y+yDir[h])) {
+			if (isInCorner(x,y))
+				return 1.0/2;
+			return 1.0/3;
+		}
+		return 0.3/3;
 	}
 
 	public double getOrXY( int rX, int rY, int x, int y) {
@@ -149,12 +160,21 @@ public class DummyLocalizer implements EstimatorInterface {
 		return ret;
 	}
 	
+	// Hashing scheme: state (x,y,dir) -> x*cols*4 + y*4 + dir
 	public double[][] getTMatrix() {
 		double[][] tMatrix = new double[rows*cols*4][rows*cols*4];
-		for (int index=0; i<rows*cols*4; i++) {
-			int row = ;
-			int col = ;
-			int dir = i%(4);
+		for (int x=0; x<rows; x++) for (int y=0; y<cols; y++) for (int h=0; h<4; h++) {
+			int index = x*cols*4 + y*4 + h;
+			for (int dir=0; dir<4; dir++) {
+				int nX = x + xDir[dir];
+				int nY = y + yDir[dir];
+				if (isOutside(nX,nY)) 
+					continue;
+				for (int nH=0; nH<4; nH++) {
+					int nIndex = nX*cols*4 + nY*4 + nH;
+					tMatrix[index][nIndex] = getTProb(x,y,h,nX,nY,nH);
+				}
+			}
 		}
 		return tMatrix;
 	}
@@ -171,10 +191,24 @@ public class DummyLocalizer implements EstimatorInterface {
 	
 	
 	
+	public List<ArrayList<Integer>> getPossibleTransitions(int row, int col, int dir) {
+		List<ArrayList<Integer>> posTran = new ArrayList<ArrayList<Integer>>();
+		
+		return posTran;
+	}
+	
 	public boolean isFacingWall() {
 		int newX = posX + xDir[head];
 		int newY = posY + yDir[head];
 		return isOutside(newX, newY);
+	}
+
+	public boolean isInCorner(int x, int y) {
+		if (x!=0 || x!=rows-1 || y!=0 || y!=cols-1)
+			return false;
+		if (x==0) 
+			return y==0 || y==cols-1;
+		return x == 0 || x==rows-1;
 	}
 	
 //	public boolean isInCorner() {
@@ -187,6 +221,27 @@ public class DummyLocalizer implements EstimatorInterface {
 	
 	public boolean isOutside(int xCoord, int yCoord) {
 		return xCoord < 0 || xCoord >= rows || yCoord < 0 || yCoord >= cols;
+	}
+	
+	public boolean isAdjacent(int x, int y, int nX, int nY) {
+		if (x==nX)
+			return y==nY-1 || y==nY+1;
+		if (y==nY)
+			return x==nX-1 || y==nY+1;
+		return false;
+	}
+	
+	public double[][] multiplyMatrix(double[][] matrix1, double[][] matrix2, int rows1,  int cols1, int rows2, int cols2) {
+		if (cols1!=rows2)
+			return null;
+		double[][] result = new double[rows1][cols2];
+		for (int i=0; i<rows1; i++) for (int j=0; j<cols2; j++) {
+			double ans = 0.0;
+			for (int k=0; k<cols1; k++) 
+				ans += matrix1[i][k] * matrix2[k][j];
+			result[i][j] = ans;
+		}
+		return result;
 	}
 	
 	public int randDirection(){
