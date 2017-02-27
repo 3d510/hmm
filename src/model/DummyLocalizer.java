@@ -83,9 +83,9 @@ public class DummyLocalizer implements EstimatorInterface {
 		if(prob <= 0.1){
 			ret[0] = posX;
 			ret[1] = posY;
-		}else if(prob <= 0.1 + 8 * 0.5){
+		}else if(prob <= 0.1 + 8 * 0.05){
 			ret = getRandomLoc1();
-		}else if(prob <= 0.1 + 8 * 0.5 + 16 * 0.025)
+		}else if(prob <= 0.1 + 8 * 0.05 + 16 * 0.025)
 			ret = getRandomLoc2();
 		else
 			ret = null;
@@ -179,16 +179,88 @@ public class DummyLocalizer implements EstimatorInterface {
 		return tMatrix;
 	}
 	
-	public double[][] getEMatrix(int coord){
-		/*if sensed_coord is None:
-            return self.none_matrix
-        width = self.width
-        height = self.height*/
+	public double[][] getEMatrix(int[] coord){
+		if(coord == null)
+            return getNullMatrix();
+		
+		int posX= coord[0];
+		int posY= coord[1];
 		double[][] matrix = new double[rows*cols*4][rows*cols*4];
 		
+		int index = posX * cols * 4 + posY * 4;
+		
+        for(int i = 0; i < 0 ; i++){
+        	matrix[index + i][index + i] = 0.1;
+        }
+        setProbNeighbor(matrix, possibleLoc1(posX, posY), 0.05);
 		return matrix;
 	}
 	
+	public double[][] getNullMatrix(){
+		double[][] matrix = new double[rows*cols*4][rows*cols*4];
+		
+		for(int i = 0; i < cols * rows * 4; i++){
+            int posX = i / (cols * 4);
+            int posY = (i / 4) % cols;
+
+            int prob1 = 8 - possibleLoc1(posX, posY).size();
+            int prob2 = 16 - possibleLoc2(posX, posY).size();
+            
+            matrix[i][i] = 1 - ( 0.1 -  prob1 * 0.05 - prob2 * 0.025);
+		}
+		
+		return matrix;
+	}
+
+	public void setProbNeighbor(double[][] matrix, List<ArrayList<Integer> > possibleLoc2, double prob){
+		for(ArrayList<Integer> element: possibleLoc2){
+			int ind = element.get(0) * cols  * 4 + element.get(1) * 4;
+			for(int i = 0; i < 4; i++){
+				matrix[ind + i][ind + i] = prob;
+			}
+		}
+	}	
+	
+	public List<ArrayList<Integer> > possibleLoc1(int posX, int posY){
+		List<ArrayList<Integer> > firstField = new ArrayList<ArrayList<Integer>>();
+		
+		int[] xDiff = {-1,-1,-1,0,0,1,1,1};
+		int[] yDiff = {-1,0,1,-1,1,-1,0,1};
+		
+		for (int i=0; i<8; i++) {
+			ArrayList<Integer> adjPos = new ArrayList<Integer>();
+			int xSelected = posX+xDiff[i];
+			int ySelected = posY+yDiff[i];
+			adjPos.add(xSelected);
+			adjPos.add(ySelected);
+			
+			if(!isOutside(xSelected,ySelected))
+				firstField.add(adjPos);
+				
+		}   
+        return firstField;    
+		
+	}
+	
+	public List<ArrayList<Integer> > possibleLoc2(int posX, int posY){
+		List<ArrayList<Integer> > secondField = new ArrayList<ArrayList<Integer>>();
+		
+		int[] xDiff = {-2,-2,-2,-2,-2,-1,-1,0,0,1,1,2,2,2,2,2};
+		int[] yDiff = {-2,-1,0,1,2,-2,2,-2,2,-2,2,-2,-1,0,1,2};
+		
+		for (int i=0; i<16; i++) {
+			ArrayList<Integer> adjPos = new ArrayList<Integer>();
+			int xSelected = posX+xDiff[i];
+			int ySelected = posY+yDiff[i];
+			adjPos.add(xSelected);
+			adjPos.add(ySelected);
+			
+			if(!isOutside(xSelected,ySelected))
+				secondField.add(adjPos);
+		}
+		
+		return secondField;
+	}
 	
 	
 	public List<ArrayList<Integer>> getPossibleTransitions(int row, int col, int dir) {
