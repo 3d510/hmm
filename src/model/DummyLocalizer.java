@@ -37,15 +37,22 @@ public class DummyLocalizer implements EstimatorInterface {
 		if (!isAdjacent(x,y,nX,nY) || isOutside(nX,nY) || isOutside(x,y))
 			return 0.0;
 		// same direction
-		if (h == nH)
+		if (h == nH && nX == x+xDir[h] && nY == y+yDir[h])
 			return 0.7;
-		// facing wall
-		if (isOutside(x+xDir[h],y+yDir[h])) {
-			if (isInCorner(x,y))
-				return 1.0/2;
-			return 1.0/3;
-		}
-		return 0.3/3;
+		if (h == nH)
+			return 0.0;
+		// different direction
+		double total_probs = 0.3;
+		if (isFacingWall(x,y,h))
+			total_probs = 1.0;
+		int count = 0;
+		for (int i=0; i<4; i++) 
+			if (i!=h && !isOutside(x+xDir[i],y+yDir[i]))
+				count++;
+		for (int i=0; i<4; i++) 
+			if (i==nH && nX==x+xDir[i] && nY==y+yDir[i])
+				return total_probs/count;
+		return 0.0;
 	}
 
 	public double getOrXY( int rX, int rY, int x, int y) {
@@ -56,7 +63,7 @@ public class DummyLocalizer implements EstimatorInterface {
 	public int[] getCurrentTruePosition() {
 		int[] ret = new int[2];
 		
-		if(isFacingWall()){
+		if(isFacingWall(posX,posY,head)){
 			int dirIndex = randDirection(); 
 			ret[0] = posX + xDir[dirIndex];
 			ret[1] = posY + yDir[dirIndex];
@@ -268,10 +275,10 @@ public class DummyLocalizer implements EstimatorInterface {
 		
 		return posTran;
 	}
-	
-	public boolean isFacingWall() {
-		int newX = posX + xDir[head];
-		int newY = posY + yDir[head];
+
+	public boolean isFacingWall(int x,int y, int h) {
+		int newX = x + xDir[h];
+		int newY = y + yDir[h];
 		return isOutside(newX, newY);
 	}
 
@@ -282,14 +289,6 @@ public class DummyLocalizer implements EstimatorInterface {
 			return y==0 || y==cols-1;
 		return x == 0 || x==rows-1;
 	}
-	
-//	public boolean isInCorner() {
-//		if (posX!=0 || posX!=rows-1 || posY!=0 || posY!=cols-1)
-//			return false;
-//		if (posX==0) 
-//			return posY==0 || posY==cols-1;
-//		return posX == 0 || posX==rows-1;
-//	}
 	
 	public boolean isOutside(int xCoord, int yCoord) {
 		return xCoord < 0 || xCoord >= rows || yCoord < 0 || yCoord >= cols;
