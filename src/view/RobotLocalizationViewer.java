@@ -160,7 +160,7 @@ public class RobotLocalizationViewer {
 				updateViewer(  tXY[0], tXY[1], sXY[0], sXY[1]);	
 			else
 				updateViewer(  tXY[0], tXY[1], -1, -1);	
-					
+			
 		}
 	}
 	
@@ -221,6 +221,16 @@ public class RobotLocalizationViewer {
 		if( sX != -1)
 			states[sX][sY][4].setBackground(Color.cyan);
 		
+		
+		//report
+		
+		System.out.printf("Current true position is: (%d,%d)\n", tX, tY);
+		if (sX!=-1 && sY!=-1)
+			System.out.printf("Current sensor reading is: (%d,%d)\n", sX,sY);
+		else 
+			System.out.println("Sensor senses nothing");
+		System.out.printf("Current predicted position is: (%d,%d)\n", maxX,maxY);
+		System.out.printf("Manhattan distance: %d\n\n", Math.abs(maxX-tX) + Math.abs(maxY-tY));
 				
 	}
 

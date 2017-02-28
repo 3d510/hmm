@@ -149,6 +149,10 @@ public class DummyLocalizer implements EstimatorInterface {
 			}
 		}
 		System.out.printf("Current true position is: (%d,%d)\n", posX,posY);
+		if (senseLocation != null)
+			System.out.printf("Current sensor reading is: (%d,%d)\n", senseLocation[0],senseLocation[1]);
+		else 
+			System.out.println("Sensor senses nothing");
 		System.out.printf("Current predicted position is: (%d,%d)\n", bestPos[0],bestPos[1]);
 		System.out.printf("Manhattan distance: %d\n\n", Math.abs(bestPos[0]-posX) + Math.abs(bestPos[1]-posY));
 		
