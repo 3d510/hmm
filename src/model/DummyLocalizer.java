@@ -12,6 +12,7 @@ public class DummyLocalizer implements EstimatorInterface {
 	Random rand = new Random();
 	int[] xDir = {-1,0,1,0}; // UP,RIGHT,DOWN,LEFT
 	int[] yDir = {0,1,0,-1};
+	double[][] fMatrix;
 
 	public DummyLocalizer( int rows, int cols, int head) {
 		this.rows = rows;
@@ -19,6 +20,7 @@ public class DummyLocalizer implements EstimatorInterface {
 		this.head = head;		
 		this.posX = rand.nextInt(rows);
 		this.posY = rand.nextInt(cols);
+		this.fMatrix = initializeFMatrix(); 
 	}	
 	
 	public int getNumRows() {
@@ -116,11 +118,40 @@ public class DummyLocalizer implements EstimatorInterface {
 
 	public double getCurrentProb( int x, int y) {
 		double ret = 0.0;
+		for (int i=0; i<4; i++) {
+			ret += fMatrix[x*cols*4+y*cols+i][0];
+		}
 		return ret;
 	}
 	
 	public void update() {
-		System.out.println("Nothing is happening, no model to go for...");
+		int[] senseLocation= getCurrentReading();
+		double[][] oMatrix = getOMatrix(senseLocation);
+		double[][] tMatrix = getTMatrix();
+		//forward step
+		double[][]temp = multiplyMatrix(oMatrix,tranMatrix(tMatrix,rows*cols*4,rows*cols*4),rows*cols*4,rows*cols*4,rows*cols*4,rows*cols*4);
+		fMatrix = multiplyMatrix(temp,fMatrix,rows*cols*4,rows*cols*4,rows*cols*4,1);
+		double sum=0.0;
+		for (int i=0; i<rows*cols*4; i++)
+			sum += fMatrix[i][0];
+		for (int i=0; i<rows*cols*4; i++)
+			fMatrix[i][0]/=sum;
+		
+		//report
+		double maxProb = -1.0;
+		int[] bestPos = new int[2];
+		for (int i=0; i<rows; i++) for(int j=0; j<cols; j++) {
+			double p = getCurrentProb(i,j);
+			if (p>maxProb) {
+				maxProb = p;
+				bestPos[0] = i;
+				bestPos[1] = j;
+			}
+		}
+		System.out.printf("Current true position is: (%d,%d)\n", posX,posY);
+		System.out.printf("Current predicted position is: (%d,%d)\n", bestPos[0],bestPos[1]);
+		System.out.printf("Manhattan distance: %d\n\n", Math.abs(bestPos[0]-posX) + Math.abs(bestPos[1]-posY));
+		
 	}
 	
 	public int[] getRandomLoc1(){
@@ -221,6 +252,10 @@ public class DummyLocalizer implements EstimatorInterface {
 	public double[][] getNullMatrix(){
 		double[][] matrix = new double[rows*cols*4][rows*cols*4];
 		
+		for(int i = 0;i < rows*cols*4; i++) for(int j = 0; j < rows*cols*4; j++){
+			matrix[i][j] = 0;
+		}
+		
 		for(int i = 0; i < cols * rows * 4; i++){
             int posX = i / (cols * 4);
             int posY = (i / 4) % cols;
@@ -283,13 +318,6 @@ public class DummyLocalizer implements EstimatorInterface {
 		
 		return secondField;
 	}
-	
-	
-	public List<ArrayList<Integer>> getPossibleTransitions(int row, int col, int dir) {
-		List<ArrayList<Integer>> posTran = new ArrayList<ArrayList<Integer>>();
-		
-		return posTran;
-	}
 
 	public boolean isFacingWall(int x,int y, int h) {
 		int newX = x + xDir[h];
@@ -330,6 +358,14 @@ public class DummyLocalizer implements EstimatorInterface {
 		return result;
 	}
 	
+	public double[][] tranMatrix(double[][] matrix, int row, int col) {
+		double[][] ret = new double[col][row];
+		for (int i=0; i<row; i++) for (int j=0; j<col;j++) {
+			ret[i][j] = matrix[j][i];
+		}
+		return ret;
+	}
+	
 	public int randDirection(){
 		ArrayList<Integer> possibleDir = new ArrayList<Integer>();
 		for (int i=0; i<4; i++)
@@ -337,6 +373,15 @@ public class DummyLocalizer implements EstimatorInterface {
 				possibleDir.add(i);
 		int randIndex = rand.nextInt(possibleDir.size());
 		return possibleDir.get(randIndex);
+	}
+	
+	public double[][] initializeFMatrix(){
+		double[][] fMatrix = new double[rows*cols*4][1];
+		
+		for(int i = 0;i < rows*cols*4; i++){
+			fMatrix[i][0] = 1.0 / (rows*cols*4);
+		}
+		return fMatrix;
 	}
 	
 }
