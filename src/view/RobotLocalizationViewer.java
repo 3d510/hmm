@@ -240,7 +240,7 @@ public class RobotLocalizationViewer {
 		
 		for( x=0; x<rows; x++) {
 			for( y=0; y<cols; y++) {
-				for( h=0; h<head; h++) {
+				for( h=0; h<=head; h++) {
 					states[x][y][h].setText( String.format("%.2f", loc.getTProb( tXCount, tYCount, tHCount, x, y, h)));
 					states[x][y][h].setBackground(Color.white);
 						

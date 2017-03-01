@@ -103,12 +103,15 @@ public class DummyLocalizer implements EstimatorInterface {
 		int[] ret = new int[2];
 		double prob = rand.nextDouble();
 		
+		List<ArrayList<Integer> > firstField = possibleLoc1(posX,posY);
+		List<ArrayList<Integer> > secondField = possibleLoc2(posX,posY);
+		
 		if(prob <= 0.1){
 			ret[0] = posX;
 			ret[1] = posY;
-		}else if(prob <= 0.1 + 8 * 0.05){
+		}else if(prob <= 0.1 + firstField.size() * 0.05){
 			ret = getRandomLoc1();
-		}else if(prob <= 0.1 + 8 * 0.05 + 16 * 0.025)
+		}else if(prob <= 0.1 + firstField.size() * 0.05 + secondField.size() * 0.025)
 			ret = getRandomLoc2();
 		else
 			ret = null;
@@ -136,43 +139,24 @@ public class DummyLocalizer implements EstimatorInterface {
 			sum += fMatrix[i][0];
 		for (int i=0; i<rows*cols*4; i++)
 			fMatrix[i][0]/=sum;
-		
-		//report
-		double maxProb = -1.0;
-		int[] bestPos = new int[2];
-		for (int i=0; i<rows; i++) for(int j=0; j<cols; j++) {
-			double p = getCurrentProb(i,j);
-			if (p>maxProb) {
-				maxProb = p;
-				bestPos[0] = i;
-				bestPos[1] = j;
-			}
-		}
-		System.out.printf("Current true position is: (%d,%d)\n", posX,posY);
-		if (senseLocation != null)
-			System.out.printf("Current sensor reading is: (%d,%d)\n", senseLocation[0],senseLocation[1]);
-		else 
-			System.out.println("Sensor senses nothing");
-		System.out.printf("Current predicted position is: (%d,%d)\n", bestPos[0],bestPos[1]);
-		System.out.printf("Manhattan distance: %d\n\n", Math.abs(bestPos[0]-posX) + Math.abs(bestPos[1]-posY));
-		
 	}
 	
 	public int[] getRandomLoc1(){
 		int [] ret = {-1,-1};
-		List<ArrayList<Integer> > firstField = new ArrayList<ArrayList<Integer>>();
+		List<ArrayList<Integer> > firstField = possibleLoc1(posX,posY);
+//		List<ArrayList<Integer> > firstField = new ArrayList<ArrayList<Integer>>();
+//		
+//		int[] xDiff = {-1,-1,-1,0,0,1,1,1};
+//		int[] yDiff = {-1,0,1,-1,1,-1,0,1};
+//		
+//		for (int i=0; i<8; i++) {
+//			ArrayList<Integer> adjPos = new ArrayList<Integer>();
+//			adjPos.add(posX+xDiff[i]);
+//			adjPos.add(posY+yDiff[i]);
+//			firstField.add(adjPos);
+//		}
 		
-		int[] xDiff = {-1,-1,-1,0,0,1,1,1};
-		int[] yDiff = {-1,0,1,-1,1,-1,0,1};
-		
-		for (int i=0; i<8; i++) {
-			ArrayList<Integer> adjPos = new ArrayList<Integer>();
-			adjPos.add(posX+xDiff[i]);
-			adjPos.add(posY+yDiff[i]);
-			firstField.add(adjPos);
-		}
-		
-		int randIndex = rand.nextInt(8);
+		int randIndex = rand.nextInt(firstField.size());
 		
 		ArrayList<Integer> selected = firstField.get(randIndex);
 		int xSelected = selected.get(0);
@@ -189,19 +173,22 @@ public class DummyLocalizer implements EstimatorInterface {
 	
 	public int[] getRandomLoc2(){
 		int [] ret = {-1,-1};
-		List<ArrayList<Integer> > secondField = new ArrayList<ArrayList<Integer>>();
 		
-		int[] xDiff = {-2,-2,-2,-2,-2,-1,-1,0,0,1,1,2,2,2,2,2};
-		int[] yDiff = {-2,-1,0,1,2,-2,2,-2,2,-2,2,-2,-1,0,1,2};
+//		List<ArrayList<Integer> > secondField = new ArrayList<ArrayList<Integer>>();
+//		
+//		int[] xDiff = {-2,-2,-2,-2,-2,-1,-1,0,0,1,1,2,2,2,2,2};
+//		int[] yDiff = {-2,-1,0,1,2,-2,2,-2,2,-2,2,-2,-1,0,1,2};
+//		
+//		for (int i=0; i<16; i++) {
+//			ArrayList<Integer> adjPos = new ArrayList<Integer>();
+//			adjPos.add(posX+xDiff[i]);
+//			adjPos.add(posY+yDiff[i]);
+//			secondField.add(adjPos);
+//		}
 		
-		for (int i=0; i<16; i++) {
-			ArrayList<Integer> adjPos = new ArrayList<Integer>();
-			adjPos.add(posX+xDiff[i]);
-			adjPos.add(posY+yDiff[i]);
-			secondField.add(adjPos);
-		}
+		List<ArrayList<Integer> > secondField = possibleLoc2(posX,posY);
 		
-		int randIndex = rand.nextInt(16);
+		int randIndex = rand.nextInt(secondField.size());
 		
 		ArrayList<Integer> selected = secondField.get(randIndex);
 		int xSelected = selected.get(0);
@@ -267,7 +254,7 @@ public class DummyLocalizer implements EstimatorInterface {
             int prob1 = 8 - possibleLoc1(posX, posY).size();
             int prob2 = 16 - possibleLoc2(posX, posY).size();
             
-            matrix[i][i] = prob1 * 0.05 + prob2 * 0.025;
+            matrix[i][i] = 0.1 + prob1 * 0.05 + prob2 * 0.025;
 		}
 		
 		return matrix;
@@ -365,7 +352,7 @@ public class DummyLocalizer implements EstimatorInterface {
 	public double[][] tranMatrix(double[][] matrix, int row, int col) {
 		double[][] ret = new double[col][row];
 		for (int i=0; i<row; i++) for (int j=0; j<col;j++) {
-			ret[i][j] = matrix[j][i];
+			ret[j][i] = matrix[i][j];
 		}
 		return ret;
 	}
