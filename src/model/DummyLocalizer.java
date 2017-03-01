@@ -119,7 +119,7 @@ public class DummyLocalizer implements EstimatorInterface {
 	public double getCurrentProb( int x, int y) {
 		double ret = 0.0;
 		for (int i=0; i<4; i++) {
-			ret += fMatrix[x*cols*4+y*cols+i][0];
+			ret += fMatrix[x*cols*4+y*4+i][0];
 		}
 		return ret;
 	}
@@ -245,7 +245,7 @@ public class DummyLocalizer implements EstimatorInterface {
 		
 		int index = x * cols * 4 + y * 4;
 		
-        for(int i = 0; i < 0 ; i++){
+        for(int i = 0; i < 4 ; i++){
         	matrix[index + i][index + i] = 0.1;
         }
         setProbNeighbor(matrix, possibleLoc1(x, y), 0.05);
@@ -267,7 +267,7 @@ public class DummyLocalizer implements EstimatorInterface {
             int prob1 = 8 - possibleLoc1(posX, posY).size();
             int prob2 = 16 - possibleLoc2(posX, posY).size();
             
-            matrix[i][i] = 0.1 +  prob1 * 0.05 + prob2 * 0.025;
+            matrix[i][i] = prob1 * 0.05 + prob2 * 0.025;
 		}
 		
 		return matrix;
