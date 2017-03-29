@@ -220,8 +220,7 @@ public class RobotLocalizationViewer {
 		states[tX][tY][4].setBackground(Color.black);
 		if( sX != -1)
 			states[sX][sY][4].setBackground(Color.cyan);
-		
-		
+				
 		//report
 		
 		System.out.printf("Current true position is: (%d,%d)\n", tX, tY);

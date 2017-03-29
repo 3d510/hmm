@@ -8,7 +8,8 @@ import control.EstimatorInterface;
 
 public class DummyLocalizer implements EstimatorInterface {
 		
-	private int rows, cols, head, posX, posY;
+	private int rows, cols, head, curHead, posX, posY;
+	private int[] sensor = new int[2];
 	Random rand = new Random();
 	int[] xDir = {-1,0,1,0}; // UP,RIGHT,DOWN,LEFT
 	int[] yDir = {0,1,0,-1};
@@ -18,8 +19,10 @@ public class DummyLocalizer implements EstimatorInterface {
 		this.rows = rows;
 		this.cols = cols;
 		this.head = head;		
+		this.curHead = rand.nextInt(head);
 		this.posX = rand.nextInt(rows);
 		this.posY = rand.nextInt(cols);
+		
 		this.fMatrix = initializeFMatrix(); 
 	}	
 	
@@ -75,11 +78,17 @@ public class DummyLocalizer implements EstimatorInterface {
 		return 0.0;
 	}
 
-
 	public int[] getCurrentTruePosition() {
 		int[] ret = new int[2];
+		ret[0] = posX;
+		ret[1] = posY;
+		return ret;
+	}
+	
+	public void moveRobot() {
+		int[] ret = new int[2];
 		
-		if(isFacingWall(posX,posY,head)){
+		if(isFacingWall(posX,posY,curHead)){
 			int dirIndex = randDirection(); 
 			ret[0] = posX + xDir[dirIndex];
 			ret[1] = posY + yDir[dirIndex];
@@ -90,16 +99,19 @@ public class DummyLocalizer implements EstimatorInterface {
 				ret[0] = posX + xDir[dirIndex];
 				ret[1] = posY + yDir[dirIndex];
 			} else {
-				ret[0] = posX + xDir[head];
-				ret[1] = posY + yDir[head];
+				ret[0] = posX + xDir[curHead];
+				ret[1] = posY + yDir[curHead];
 			}
 		}
 		posX = ret[0];
 		posY = ret[1];
-		return ret;
 	}
 
 	public int[] getCurrentReading() {
+		return sensor;
+	}
+	
+	public void readSensor() {
 		int[] ret = new int[2];
 		double prob = rand.nextDouble();
 		
@@ -113,9 +125,11 @@ public class DummyLocalizer implements EstimatorInterface {
 			ret = getRandomLoc1();
 		}else if(prob <= 0.1 + firstField.size() * 0.05 + secondField.size() * 0.025)
 			ret = getRandomLoc2();
-		else
-			ret = null;
-		return ret;
+		else {
+			ret[0]=-1;
+			ret[1]=-1;
+		}
+		sensor = ret;
 	}
 
 
@@ -128,8 +142,10 @@ public class DummyLocalizer implements EstimatorInterface {
 	}
 	
 	public void update() {
-		int[] senseLocation= getCurrentReading();
-		double[][] oMatrix = getOMatrix(senseLocation);
+		moveRobot();
+		readSensor();
+//		int[] senseLocation= getCurrentReading();
+		double[][] oMatrix = getOMatrix(sensor);
 		double[][] tMatrix = getTMatrix();
 		//forward step
 		double[][]temp = multiplyMatrix(oMatrix,tranMatrix(tMatrix,rows*cols*4,rows*cols*4),rows*cols*4,rows*cols*4,rows*cols*4,rows*cols*4);
@@ -137,8 +153,22 @@ public class DummyLocalizer implements EstimatorInterface {
 		double sum=0.0;
 		for (int i=0; i<rows*cols*4; i++)
 			sum += fMatrix[i][0];
+		if (sum==0) 
+			return;
 		for (int i=0; i<rows*cols*4; i++)
 			fMatrix[i][0]/=sum;
+		
+//		print(oMatrix,rows*cols*4,rows*cols*4);
+//		print(fMatrix,rows*cols*4,1);
+		
+	}
+	
+	public void print(double[][] arr, int size1, int size2) {
+		for (int i=0; i<size1; i++) {
+			for (int j=0; j<size2; j++)
+				System.out.printf("%.4f ", arr[i][j]);
+			System.out.println();
+		}
 	}
 	
 	public int[] getRandomLoc1(){
@@ -222,22 +252,33 @@ public class DummyLocalizer implements EstimatorInterface {
 		return tMatrix;
 	}
 	
-	public double[][] getOMatrix(int[] coord){
-		if(coord == null)
-            return getNullMatrix();
+	public double[][] getOMatrix(int[] coord) {
+//		if(coord == null)
+//            return getNullMatrix();
+//		
+//		int x= coord[0];
+//		int y= coord[1];
+//		double[][] matrix = new double[rows*cols*4][rows*cols*4];
+//		
+//		int index = x * cols * 4 + y * 4;
+//		
+//        for(int i = 0; i < 4 ; i++){
+//        	matrix[index + i][index + i] = 0.1;
+//        }
+//        setProbNeighbor(matrix, possibleLoc1(x, y), 0.05);
+//        setProbNeighbor(matrix, possibleLoc2(x, y), 0.025);
+//		return matrix;
 		
-		int x= coord[0];
-		int y= coord[1];
-		double[][] matrix = new double[rows*cols*4][rows*cols*4];
+		double[][] oMatrix = new double[rows*cols*4][rows*cols*4];
 		
-		int index = x * cols * 4 + y * 4;
-		
-        for(int i = 0; i < 4 ; i++){
-        	matrix[index + i][index + i] = 0.1;
-        }
-        setProbNeighbor(matrix, possibleLoc1(x, y), 0.05);
-        setProbNeighbor(matrix, possibleLoc2(x, y), 0.025);
-		return matrix;
+		for (int x=0; x<rows; x++) for (int y=0; y<cols; y++) {
+			double prob = getOrXY(coord[0],coord[1],x,y);
+			int index = x * cols * 4 + y * 4;
+	        for(int i = 0; i < 4 ; i++){
+	        	oMatrix[index + i][index + i] = prob;
+	        }
+		}
+		return oMatrix;
 	}
 	
 	public double[][] getNullMatrix(){
@@ -251,10 +292,10 @@ public class DummyLocalizer implements EstimatorInterface {
             int posX = i / (cols * 4);
             int posY = (i / 4) % cols;
 
-            int prob1 = 8 - possibleLoc1(posX, posY).size();
-            int prob2 = 16 - possibleLoc2(posX, posY).size();
+            int prob1 = possibleLoc1(posX, posY).size();
+            int prob2 = possibleLoc2(posX, posY).size();
             
-            matrix[i][i] = 0.1 + prob1 * 0.05 + prob2 * 0.025;
+            matrix[i][i] = 1 - (0.1 + prob1 * 0.05 + prob2 * 0.025);
 		}
 		
 		return matrix;
@@ -360,7 +401,7 @@ public class DummyLocalizer implements EstimatorInterface {
 	public int randDirection(){
 		ArrayList<Integer> possibleDir = new ArrayList<Integer>();
 		for (int i=0; i<4; i++)
-			if (i!=head && !isOutside(posX+xDir[i],posY+yDir[i]))
+			if (i!=curHead && !isOutside(posX+xDir[i],posY+yDir[i]))
 				possibleDir.add(i);
 		int randIndex = rand.nextInt(possibleDir.size());
 		return possibleDir.get(randIndex);
