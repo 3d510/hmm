@@ -223,13 +223,13 @@ public class RobotLocalizationViewer {
 				
 		//report
 		
-		System.out.printf("Current true position is: (%d,%d)\n", tX, tY);
-		if (sX!=-1 && sY!=-1)
-			System.out.printf("Current sensor reading is: (%d,%d)\n", sX,sY);
-		else 
-			System.out.println("Sensor senses nothing");
-		System.out.printf("Current predicted position is: (%d,%d)\n", maxX,maxY);
-		System.out.printf("Manhattan distance: %d\n\n", Math.abs(maxX-tX) + Math.abs(maxY-tY));
+//		System.out.printf("Current true position is: (%d,%d)\n", tX, tY);
+//		if (sX!=-1 && sY!=-1)
+//			System.out.printf("Current sensor reading is: (%d,%d)\n", sX,sY);
+//		else 
+//			System.out.println("Sensor senses nothing");
+//		System.out.printf("Current predicted position is: (%d,%d)\n", maxX,maxY);
+//		System.out.printf("Manhattan distance: %d\n\n", Math.abs(maxX-tX) + Math.abs(maxY-tY));
 				
 	}
 

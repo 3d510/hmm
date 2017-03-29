@@ -13,7 +13,7 @@ public class DummyLocalizer implements EstimatorInterface {
 	Random rand = new Random();
 	int[] xDir = {-1,0,1,0}; // UP,RIGHT,DOWN,LEFT
 	int[] yDir = {0,1,0,-1};
-	double[][] fMatrix;
+	double[][] fMatrix,tMatrix;
 
 	public DummyLocalizer( int rows, int cols, int head) {
 		this.rows = rows;
@@ -22,7 +22,7 @@ public class DummyLocalizer implements EstimatorInterface {
 		this.curHead = rand.nextInt(head);
 		this.posX = rand.nextInt(rows);
 		this.posY = rand.nextInt(cols);
-		
+		this.tMatrix = getTMatrix();
 		this.fMatrix = initializeFMatrix(); 
 	}	
 	
@@ -144,12 +144,22 @@ public class DummyLocalizer implements EstimatorInterface {
 	public void update() {
 		moveRobot();
 		readSensor();
-//		int[] senseLocation= getCurrentReading();
 		double[][] oMatrix = getOMatrix(sensor);
-		double[][] tMatrix = getTMatrix();
+		//double[][] tMatrix = getTMatrix();
 		//forward step
-		double[][]temp = multiplyMatrix(oMatrix,tranMatrix(tMatrix,rows*cols*4,rows*cols*4),rows*cols*4,rows*cols*4,rows*cols*4,rows*cols*4);
-		fMatrix = multiplyMatrix(temp,fMatrix,rows*cols*4,rows*cols*4,rows*cols*4,1);
+//		double[][]temp = multiplyMatrix(oMatrix,tranMatrix(tMatrix,rows*cols*4,rows*cols*4),rows*cols*4,rows*cols*4,rows*cols*4,rows*cols*4);
+//		fMatrix = multiplyMatrix(temp,fMatrix,rows*cols*4,rows*cols*4,rows*cols*4,1);
+		
+		double[][] newFMatrix = new double[rows*cols*4][1];
+		for (int i=0; i<rows*cols*4; i++) {
+			newFMatrix[i][0]=0;
+			for (int j=0; j<rows*cols*4; j++)
+				newFMatrix[i][0] += oMatrix[i][i]*tMatrix[j][i]*fMatrix[j][0];
+		}
+		
+		for (int i=0; i<rows*cols*4; i++) 
+			fMatrix[i][0] = newFMatrix[i][0];
+		
 		double sum=0.0;
 		for (int i=0; i<rows*cols*4; i++)
 			sum += fMatrix[i][0];
@@ -158,12 +168,15 @@ public class DummyLocalizer implements EstimatorInterface {
 		for (int i=0; i<rows*cols*4; i++)
 			fMatrix[i][0]/=sum;
 		
-//		print(oMatrix,rows*cols*4,rows*cols*4);
-//		print(fMatrix,rows*cols*4,1);
-		
 	}
 	
-	public void print(double[][] arr, int size1, int size2) {
+	public void print(double[][] arr, int size1, int size2, boolean isDiag) {
+		if (isDiag) {
+			for (int i=0; i<size1; i++) 
+				System.out.printf("%.4f ",arr[i][i]);
+			System.out.println();
+			return;
+		} 
 		for (int i=0; i<size1; i++) {
 			for (int j=0; j<size2; j++)
 				System.out.printf("%.4f ", arr[i][j]);
@@ -238,15 +251,9 @@ public class DummyLocalizer implements EstimatorInterface {
 		double[][] tMatrix = new double[rows*cols*4][rows*cols*4];
 		for (int x=0; x<rows; x++) for (int y=0; y<cols; y++) for (int h=0; h<4; h++) {
 			int index = x*cols*4 + y*4 + h;
-			for (int dir=0; dir<4; dir++) {
-				int nX = x + xDir[dir];
-				int nY = y + yDir[dir];
-				if (isOutside(nX,nY)) 
-					continue;
-				for (int nH=0; nH<4; nH++) {
-					int nIndex = nX*cols*4 + nY*4 + nH;
-					tMatrix[index][nIndex] = getTProb(x,y,h,nX,nY,nH);
-				}
+			for (int nx=0; nx<rows; nx++) for (int ny=0; ny<cols; ny++) for (int nh=0; nh<4; nh++) {
+				int nindex = nx*cols*4 + ny*4 + nh;
+				tMatrix[index][nindex] = getTProb(x,y,h,nx,ny,nh);
 			}
 		}
 		return tMatrix;
@@ -373,7 +380,7 @@ public class DummyLocalizer implements EstimatorInterface {
 		if (x==nX)
 			return y==nY-1 || y==nY+1;
 		if (y==nY)
-			return x==nX-1 || y==nY+1;
+			return x==nX-1 || x==nX+1;
 		return false;
 	}
 	
